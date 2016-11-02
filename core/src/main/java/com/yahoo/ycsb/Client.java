@@ -1031,7 +1031,7 @@ public class Client
     final List<ClientThread> clients = new ArrayList<ClientThread>(threadcount);
 
     boolean initFailed = false;
-    try (final TraceScope span = tracer.newScope(CLIENT_INIT_SPAN)) {
+     try (final TraceScope span = tracer.newScope(CLIENT_INIT_SPAN)) {
 
       int opcount;
       if (dotransactions)

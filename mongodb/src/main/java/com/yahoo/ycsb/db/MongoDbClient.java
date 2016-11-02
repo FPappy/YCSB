@@ -24,9 +24,23 @@
  */
 package com.yahoo.ycsb.db;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.bson.Document;
+import org.bson.types.Binary;
+
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
 import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -42,18 +56,6 @@ import com.yahoo.ycsb.ByteIterator;
 import com.yahoo.ycsb.DB;
 import com.yahoo.ycsb.DBException;
 import com.yahoo.ycsb.Status;
-
-import org.bson.Document;
-import org.bson.types.Binary;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Vector;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MongoDB binding for YCSB framework using the MongoDB Inc. <a
@@ -204,21 +206,12 @@ public class MongoDbClient extends DB {
 
       try {
         MongoClientURI uri = new MongoClientURI(url);
-
-        String uriDb = uri.getDatabase();
-        if (!defaultedUrl && (uriDb != null) && !uriDb.isEmpty()
-            && !"admin".equals(uriDb)) {
-          databaseName = uriDb;
-        } else {
-          // If no database is specified in URI, use "ycsb"
-          databaseName = "ycsb";
-
-        }
+        
+        mongoClient = initMongoClient(uri, url, defaultedUrl, props);
 
         readPreference = uri.getOptions().getReadPreference();
         writeConcern = uri.getOptions().getWriteConcern();
-
-        mongoClient = new MongoClient(uri);
+        
         database =
             mongoClient.getDatabase(databaseName)
                 .withReadPreference(readPreference)
@@ -466,5 +459,46 @@ public class MongoDbClient extends DB {
             new ByteArrayByteIterator(((Binary) entry.getValue()).getData()));
       }
     }
+  }
+
+  /**
+   * Encapsulate decision making and specifics of creating the MongoClient instance
+   * @return
+   */
+  private MongoClient initMongoClient(MongoClientURI uri, String url, boolean defaultedUrl, Properties props){
+	  
+      MongoClient mc = null;
+
+      boolean useAuth = Boolean.parseBoolean(props.getProperty("mongodb.use_auth"));
+      
+      String uriDb = uri.getDatabase();
+      if (!defaultedUrl && (uriDb != null) && !uriDb.isEmpty()
+          && !"admin".equals(uriDb)) {
+        databaseName = uriDb;
+      } else {
+    	  if (uriDb.isEmpty()){
+    		  databaseName = props.getProperty("mongodb.databasename");
+    		  if (databaseName == null || databaseName.isEmpty()) {
+    			  
+    		  }
+   	        // If no database is specified in either URI or props, use "ycsb"
+            databaseName = "ycsb";
+    	  }
+      }
+      
+      if (useAuth){
+        ServerAddress sa = new ServerAddress("dev-pi-mongo-router.prv-openclass.com", 27017);
+        List<MongoCredential> cList = new ArrayList<MongoCredential>();
+        MongoCredential cred = MongoCredential.
+                 createMongoCRCredential("mongoRoot", "admin", "mongopass".toCharArray());
+        cList.add(cred);
+        
+        mc = new MongoClient(sa, cList);
+        
+      } else {
+        mc = new MongoClient(uri);
+      }
+      
+      return mc;
   }
 }

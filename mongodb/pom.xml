@@ -60,6 +60,16 @@ LICENSE file.
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+	  <groupId>org.apache.htrace</groupId>
+	  <artifactId>htrace-core4</artifactId>
+	  <version>4.1.0-incubating</version>
+	</dependency>
+	<dependency>
+	  <groupId>org.hdrhistogram</groupId>
+	  <artifactId>HdrHistogram</artifactId>
+	  <version>2.1.7</version>
+	</dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -79,4 +89,28 @@ LICENSE file.
       <layout>default</layout>
     </repository>
   </repositories>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven.assembly.version}</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  
 </project>
